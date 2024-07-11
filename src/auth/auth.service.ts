@@ -42,18 +42,20 @@ export class AuthService {
         return {
             name,
             email,
+            credits: 100
         };
     }
 
     async login(loginDto: LoginDto) {
+        console.log(loginDto.email);
         const user = await this.usersService.findByEmailWithPassword(loginDto.email);
         if (!user) {
-            throw new UnauthorizedException('User not found');
+            throw new UnauthorizedException('User or password invalid');
         }
 
         const isPasswordValid = await bcryptjs.compare(loginDto.password, user.password);
         if (!isPasswordValid) {
-            throw new UnauthorizedException('Invalid password');
+            throw new UnauthorizedException('User or password invalid');
         }
 
         const payload = { email: user.email, role: user.role };
@@ -71,7 +73,8 @@ export class AuthService {
             return {
                 user: {
                     email: user.email,
-                    role: user.role
+                    role: user.role,
+                    credits: user.credits
                 },
                 backendTokens: {
                     accessToken,

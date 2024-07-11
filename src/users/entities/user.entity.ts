@@ -23,6 +23,12 @@ export class User {
   @Column({ type: 'enum', default: Role.USER, enum: Role })
   role: Role;
 
+  @Column({ default: true })
+  isActive: boolean;
+
+  @Column({ default: 100 })
+  credits: number;
+
   @DeleteDateColumn()
   deletedAt: Date;
 }

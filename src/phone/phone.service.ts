@@ -2,6 +2,10 @@ import { Injectable } from "@nestjs/common";
 import axios from "axios";
 import { axiosErrorHandler } from "src/common/utils/http-resp.utils";
 import { CheckCallerID, CheckPhoneDto, validatePhone } from "./dto/phone.dto";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Store } from "./entities/validate.entity";
+import { Repository } from "typeorm";
+import { UserActiveInterface } from "src/common/interfaces/user-active.interface";
 
 @Injectable()
 export class PhoneService {
@@ -10,7 +14,13 @@ export class PhoneService {
     private readonly trestleURL = process.env.TRESTLE_URL
     private readonly trestleKEY = process.env.TRESTLE_KEY
 
-    async checkUserPhone(phoneNumber: CheckPhoneDto) {
+
+    constructor(
+        @InjectRepository(Store)
+        private readonly storeRepository: Repository<Store>
+    ){}
+
+    async checkUserPhone(phoneNumber: CheckPhoneDto, user: UserActiveInterface) {
         const headers = {
             'Content-type': 'application/json'
         };
@@ -69,19 +79,17 @@ export class PhoneService {
     async phoneValidation(phoneNumber: validatePhone) {
         const headers = {
             'Content-type': 'application/json',
-            'x-api-key': this.trestleKEY
+            'x-api-key': this.trestleKEY.toString()
         };
 
         const url = `${this.trestleURL}/3.0/phone_intel?phone=${phoneNumber.number}&phone.country_hint=PE`;
 
-        console.log(url)
         const response = await fetch(url, {
             method: 'GET',
             headers: headers
         });
 
         const resp = await response.json();
-
         return {
             status: response.status,
             data: resp

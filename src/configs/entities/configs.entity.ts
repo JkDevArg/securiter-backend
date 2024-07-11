@@ -9,33 +9,27 @@ import {
   } from 'typeorm';
 
   @Entity()
-  export class Store {
+  export class Configs {
     @PrimaryGeneratedColumn()
     id: number;
 
-    @Column({ nullable: true })
-    phone_number: string;
+    @Column({ comment: 'Title of the settings' })
+    title: string;
 
-    @Column({ nullable: true })
-    url: string;
+    @Column({ type: 'text', nullable: true, comment: 'Description of the service'})
+    description: string;
 
-    @Column({ nullable: true })
-    email: string;
-
-    @Column({ nullable: true })
-    proxy: string;
-
-    @Column({ type: 'text'})
-    data: string;
-
-    @Column({ default: 100 })
+    @Column({comment: 'Credits cost for the service'})
     credits: number;
 
-    @Column()
+    @Column({nullable: true,type: 'float', comment: 'Price of the service'})
+    price: number;
+
+    @Column({ comment: 'Module assigned' })
     module: string;
 
-    @Column({ default: false })
-    is_admin: boolean;
+    @Column({ comment: 'Role assign module '})
+    assign: string;
 
     @ManyToOne(() => User)
     @JoinColumn({ name: 'userEmail', referencedColumnName: 'email',  })
