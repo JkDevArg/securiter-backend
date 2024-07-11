@@ -1,4 +1,4 @@
-# API DockerHub
+# API APP BACKEND
 
 ## Description
 Este proyecto utiliza  [PASETO](https://paseto.io/).
