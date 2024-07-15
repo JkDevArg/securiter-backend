@@ -1,7 +1,7 @@
 import { IsNumber, IsString, MaxLength, MinLength } from "class-validator";
 
 export class CheckPhoneDto {
-    @IsNumber()
+    @IsString()
     number: number;
 }
 

@@ -22,21 +22,11 @@ import {
     @Column({comment: 'Credits cost for the service'})
     credits: number;
 
-    @Column({nullable: true,type: 'float', comment: 'Price of the service'})
-    price: number;
-
     @Column({ comment: 'Module assigned' })
     module: string;
 
     @Column({ comment: 'Role assign module '})
-    assign: string;
-
-    @ManyToOne(() => User)
-    @JoinColumn({ name: 'userEmail', referencedColumnName: 'email',  })
-    user: User;
-
-    @Column()
-    userEmail: string;
+    role_assign: string;
 
     @CreateDateColumn()
     createdAt: Date;

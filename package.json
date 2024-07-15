@@ -17,7 +17,12 @@
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "jest --config ./test/jest-e2e.json"
+    "test:e2e": "jest --config ./test/jest-e2e.json",
+    "typeorm": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js",
+    "typeorm:run": "npm run typeorm migration:run -- -d ./data-source.ts",
+    "typeorm:revert": "npm run typeorm migration:revert -- -d ./data-source.ts",
+    "typeorm:generate": "npm run typeorm migration:generate -n -- -d data-source.ts",
+    "typeorm:create": "npm run typeorm migration:create -n"
   },
   "dependencies": {
     "@nestjs/cache-manager": "^2.2.0",
@@ -26,11 +31,14 @@
     "@nestjs/core": "^10.0.0",
     "@nestjs/jwt": "10.1.0",
     "@nestjs/mapped-types": "*",
+    "@nestjs/passport": "^10.0.3",
     "@nestjs/platform-express": "^10.0.0",
+    "@nestjs/throttler": "^6.0.0",
     "@nestjs/typeorm": "^10.0.1",
     "@types/cache-manager": "^4.0.6",
     "@types/cache-manager-redis-store": "^2.0.4",
     "axios": "^1.6.5",
+    "bcrypt": "^5.1.1",
     "bcryptjs": "2.4.3",
     "cache-manager": "^5.3.2",
     "cache-manager-redis-store": "2",
@@ -41,6 +49,7 @@
     "node_js_ipqs_db_reader": "^1.0.5",
     "paseto": "^3.1.4",
     "paseto-ts": "^1.5.7",
+    "passport-local": "^1.0.0",
     "reflect-metadata": "^0.1.13",
     "rxjs": "^7.8.1",
     "typeorm": "0.3.17"

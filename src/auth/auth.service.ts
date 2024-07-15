@@ -13,6 +13,7 @@ import { Repository } from 'typeorm';
 import { generateKey } from 'src/utils/generateKey';
 import { LoginDto } from './dto/login.dto';
 import { updateEnvVariable } from 'src/utils/updateEnv';
+import { comparePasswords } from 'src/helpers/password';
 
 const EXPIRE_TIME = 20 * 1000;
 
@@ -37,6 +38,7 @@ export class AuthService {
             name,
             email,
             password: await bcryptjs.hash(password, 10),
+            credits: 100
         });
 
         return {
@@ -47,7 +49,6 @@ export class AuthService {
     }
 
     async login(loginDto: LoginDto) {
-        console.log(loginDto.email);
         const user = await this.usersService.findByEmailWithPassword(loginDto.email);
         if (!user) {
             throw new UnauthorizedException('User or password invalid');
@@ -58,7 +59,7 @@ export class AuthService {
             throw new UnauthorizedException('User or password invalid');
         }
 
-        const payload = { email: user.email, role: user.role };
+        const payload = { email: user.email, role: user.role, credits: user.credits };
 
         try {
             // Obtener la clave privada en formato Buffer
@@ -115,4 +116,61 @@ export class AuthService {
 
         return key.privateKey;
     }
+
+    async validateUser(username: string, pass: string) {
+        const user = await this.usersService.findOneByEmail(username);
+
+        if (!user) return null;
+
+        const passOk = await comparePasswords(pass, user.password);
+
+        if (!passOk) return null;
+
+        delete user.password;
+
+        return user;
+    }
+
+    /* async removeToken(token: string, forever: boolean = false) {
+        const _token = await this.tokensRepository.findOneBy({ token });
+
+        if (!_token) return;
+
+        _token.state = BaseEntityState.DELETED;
+        _token.date_deleted = getSystemDatetime();
+
+        await this.tokensRepository.save(_token);
+    }
+
+    async removeExpiredTokens() {
+        await this.tokensRepository
+          .createQueryBuilder()
+          .update()
+          .set({
+            state: BaseEntityState.DELETED,
+            date_deleted: getSystemDatetime(),
+          })
+          .where('date_expiration < NOW()')
+          .andWhere('state = :state', { state: BaseEntityState.ENABLED })
+          .execute();
+      }
+
+        async isTokenInBlackList(token: string): Promise<boolean> {
+            const _token = await this.tokensRepository.findOne({
+            where: { token: token, state: BaseEntityState.ENABLED },
+            });
+
+            return !_token;
+        }
+
+        async validateToken(token: string) {
+            const payload = await this.getPayloadFromToken(token);
+            if (!payload) throw new UnauthorizedException('El token ha expirado o es invalido');
+
+            const isInBlackList = await this.isTokenInBlackList(token);
+            if (isInBlackList)
+            throw new BadRequestException('El token ya ha sido utilizado');
+        }
+
+      */
 }

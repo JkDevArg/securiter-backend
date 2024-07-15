@@ -1,4 +1,4 @@
-  import { Body, Controller, Get, Post, Request, UseGuards } from '@nestjs/common';
+  import { Body, Controller, Delete, Get, Post, Request, UseGuards } from '@nestjs/common';
   import { AuthService } from './auth.service';
   import { LoginDto } from './dto/login.dto';
   import { RegisterDto } from './dto/register.dto';
@@ -36,6 +36,12 @@
     @Auth(Role.USER)
     profile(@Request() req: RequestWithUser) {
       // Obtenemos información del usuario logeado
+      const email = req.user.email;
+      return this.authService.profile({ email });
+    }
+
+    @Delete('logout')
+    async remove(@Request() req: RequestWithUser) {
       const email = req.user.email;
       return this.authService.profile({ email });
     }

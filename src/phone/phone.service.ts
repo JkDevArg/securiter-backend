@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { BadRequestException, Injectable } from "@nestjs/common";
 import axios from "axios";
 import { axiosErrorHandler } from "src/common/utils/http-resp.utils";
 import { CheckCallerID, CheckPhoneDto, validatePhone } from "./dto/phone.dto";
@@ -6,6 +6,9 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { Store } from "./entities/validate.entity";
 import { Repository } from "typeorm";
 import { UserActiveInterface } from "src/common/interfaces/user-active.interface";
+import { Role } from "src/common/enums/rol.enum";
+import { User } from "src/users/entities/user.entity";
+import { UsersService } from "src/users/users.service";
 
 @Injectable()
 export class PhoneService {
@@ -17,7 +20,8 @@ export class PhoneService {
 
     constructor(
         @InjectRepository(Store)
-        private readonly storeRepository: Repository<Store>
+        private readonly storeRepository: Repository<Store>,
+        private readonly userService: UsersService,
     ){}
 
     async checkUserPhone(phoneNumber: CheckPhoneDto, user: UserActiveInterface) {
@@ -25,8 +29,28 @@ export class PhoneService {
             'Content-type': 'application/json'
         };
 
+        const validateCredits = await this.userService.findByEmailWithCredit(user.email);
+        if (validateCredits.credits < 10) throw new BadRequestException(`No tienes suficientes créditos`);
+
+        const exists = await this.checkValidateExists('phone_number', phoneNumber.number);
+        if (exists) return { status: 200, data: exists};
+
         const axiosPromise = axios.post(`${this.baseUrl}/json/phone/${this.key}/${phoneNumber.number}?country[]=PE`, { headers });
         const resp = await axiosErrorHandler(axiosPromise);
+
+        if (!resp.success) throw new BadRequestException(resp.message);
+
+        const saveStore = {
+            phone_number: phoneNumber.number.toString(),
+            data: JSON.stringify(resp), // Convertir el objeto resp a una cadena JSON
+            credits: 10,
+            userEmail: user.email,
+            module: 'checkUserPhone',
+            is_admin: user.role == Role.ADMIN
+        };
+
+        await this.storeRepository.save(saveStore);
+        await this.userService.updateCreditsWithEmail(user.email, validateCredits.credits - 10);
 
         return {
             status: 200,
@@ -132,4 +156,12 @@ export class PhoneService {
         };
     }
 
+    async checkValidateExists(module: string, data: any) {
+        const whereCondition = {};
+        whereCondition[module] = data;
+
+        return this.storeRepository.findOne({
+            where: whereCondition
+        });
+    }
 }

@@ -27,6 +27,18 @@ export class UsersService {
     });
   }
 
+  findByEmailWithCredit(email: string){
+    return this.userRepository.findOne({
+      where: { email },
+      select: ['email','credits'],
+    });
+  }
+
+  async updateCreditsWithEmail(email: string, credits: number) {
+    await this.userRepository.update({ email }, { credits });
+    return this.userRepository.findOneBy({ email });
+  }
+
   findAll() {
     return this.userRepository.find();
   }
