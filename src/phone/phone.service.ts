@@ -9,6 +9,8 @@ import { UserActiveInterface } from "src/common/interfaces/user-active.interface
 import { Role } from "src/common/enums/rol.enum";
 import { User } from "src/users/entities/user.entity";
 import { UsersService } from "src/users/users.service";
+import { CreditsService } from "src/credits/credits.service";
+import { SettingsService } from "src/configs/configs.service";
 
 @Injectable()
 export class PhoneService {
@@ -21,6 +23,8 @@ export class PhoneService {
     constructor(
         @InjectRepository(Store)
         private readonly storeRepository: Repository<Store>,
+        private readonly creditService: CreditsService,
+        private readonly moduleService: SettingsService,
         private readonly userService: UsersService,
     ){}
 
@@ -29,8 +33,9 @@ export class PhoneService {
             'Content-type': 'application/json'
         };
 
-        const validateCredits = await this.userService.findByEmailWithCredit(user.email);
-        if (validateCredits.credits < 10) throw new BadRequestException(`No tienes suficientes créditos`);
+        const validateCredits = await this.moduleService.getSettingsByName('check-phone')
+        //const validateCredits = await this.creditService.getUserCredits(user);
+        /* if (validateCredits.data['credits'] < 10) throw new BadRequestException(`No tienes suficientes créditos`); */
 
         const exists = await this.checkValidateExists('phone_number', phoneNumber.number);
         if (exists) return { status: 200, data: exists};
@@ -45,13 +50,12 @@ export class PhoneService {
             data: JSON.stringify(resp), // Convertir el objeto resp a una cadena JSON
             credits: 10,
             userEmail: user.email,
-            module: 'checkUserPhone',
+            module: 'check-phone',
             is_admin: user.role == Role.ADMIN
         };
 
         await this.storeRepository.save(saveStore);
-        await this.userService.updateCreditsWithEmail(user.email, validateCredits.credits - 10);
-
+        //Desconar los credios
         return {
             status: 200,
             data: resp

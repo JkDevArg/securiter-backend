@@ -4,12 +4,15 @@ import { Repository } from 'typeorm';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { User } from './entities/user.entity';
+import { Credit } from 'src/credits/entities/credit.entity';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    @InjectRepository(Credit)
+    private readonly creditRepository: Repository<Credit>,
   ) {}
 
   create(createUserDto: CreateUserDto) {
@@ -23,20 +26,18 @@ export class UsersService {
   findByEmailWithPassword(email: string) {
     return this.userRepository.findOne({
       where: { email },
-      select: ['id', 'name', 'email', 'password', 'role', 'credits'],
+      select: ['id', 'name', 'email', 'password', 'role'],
     });
   }
 
   findByEmailWithCredit(email: string){
-    return this.userRepository.findOne({
-      where: { email },
-      select: ['email','credits'],
+    return this.creditRepository.findOne({
+      where: { userEmail: email },
+      select: ['id', 'credits'],
+      order: {
+        createdAt: 'DESC',
+      }
     });
-  }
-
-  async updateCreditsWithEmail(email: string, credits: number) {
-    await this.userRepository.update({ email }, { credits });
-    return this.userRepository.findOneBy({ email });
   }
 
   findAll() {

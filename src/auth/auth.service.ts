@@ -14,6 +14,8 @@ import { generateKey } from 'src/utils/generateKey';
 import { LoginDto } from './dto/login.dto';
 import { updateEnvVariable } from 'src/utils/updateEnv';
 import { comparePasswords } from 'src/helpers/password';
+import { Credit } from 'src/credits/entities/credit.entity';
+import { CreditsService } from 'src/credits/credits.service';
 
 const EXPIRE_TIME = 20 * 1000;
 
@@ -25,6 +27,7 @@ export class AuthService {
         private readonly usersService: UsersService,
         @InjectRepository(Settings)
         private readonly settingsRepository: Repository<Settings>,
+        private readonly creditsService: CreditsService
     ) { }
 
     async register({ name, email, password }: RegisterDto) {
@@ -37,14 +40,19 @@ export class AuthService {
         await this.usersService.create({
             name,
             email,
-            password: await bcryptjs.hash(password, 10),
-            credits: 100
+            password: await bcryptjs.hash(password, 10)
         });
 
+        // Creamos los creditos asignando al usuario que se registra
+        await this.creditsService.create(user.email);
+
         return {
-            name,
-            email,
-            credits: 100
+            status: 200,
+            data: {
+                'name': name,
+                'email': email,
+                'credits': 100
+            }
         };
     }
 
@@ -59,7 +67,9 @@ export class AuthService {
             throw new UnauthorizedException('User or password invalid');
         }
 
-        const payload = { email: user.email, role: user.role, credits: user.credits };
+        const getCredits = await this.creditsService.getUserCredits(user.email);
+
+        const payload = { email: user.email, role: user.role, credits: getCredits.data.credits };
 
         try {
             // Obtener la clave privada en formato Buffer
@@ -75,7 +85,7 @@ export class AuthService {
                 user: {
                     email: user.email,
                     role: user.role,
-                    credits: user.credits
+                    credits: getCredits.data.credits
                 },
                 backendTokens: {
                     accessToken,

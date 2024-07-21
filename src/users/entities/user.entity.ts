@@ -26,9 +26,6 @@ export class User {
   @Column({ default: true })
   isActive: boolean;
 
-  @Column({ default: 100 })
-  credits: number;
-
   @DeleteDateColumn()
   deletedAt: Date;
 }

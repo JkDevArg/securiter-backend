@@ -1,7 +1,8 @@
 import { IsNumber } from "class-validator";
 
 export class CreateCreditDto {
-
+    @IsNumber()
+    credits: number;
 }
 
 export class CharCreditDto {

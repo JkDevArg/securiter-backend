@@ -2,14 +2,16 @@ import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/commo
 import { CreditsService } from './credits.service';
 import { CreateCreditDto } from './dto/create-credit.dto';
 import { UpdateCreditDto } from './dto/update-credit.dto';
+import { UserActiveInterface } from 'src/common/interfaces/user-active.interface';
+import { ActiveUser } from 'src/common/decorators/active-user.decorator';
 
 @Controller('credits')
 export class CreditsController {
   constructor(private readonly creditsService: CreditsService) {}
 
   @Post()
-  create(@Body() createCreditDto: CreateCreditDto) {
-    return this.creditsService.create(createCreditDto);
+  create(@ActiveUser() user: UserActiveInterface) {
+    return this.creditsService.create(user.email);
   }
 
   @Get()
@@ -30,5 +32,10 @@ export class CreditsController {
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.creditsService.remove(+id);
+  }
+
+  @Get('get_credits')
+  getUserCredits(@ActiveUser() user: UserActiveInterface) {
+    return this.creditsService.getUserCredits(user.email);
   }
 }

@@ -7,16 +7,26 @@ import { Configs } from "./entities/configs.entity";
 
 
 @Injectable()
-export class settingsService {
+export class SettingsService {
     constructor(
         @InjectRepository(Configs)
         private readonly configsRepository: Repository<Configs>
     ){}
 
-    async setSettings(configsDto: ConfigsDto,user: UserActiveInterface){
+    async setSettings(configsDto: ConfigsDto, user: UserActiveInterface){
         return this.configsRepository.save({
             ...configsDto,
             userEmail: user.email
+        });
+    }
+
+    async getSettings() {
+        return this.configsRepository.find();
+    }
+
+    async getSettingsByName(module: string) {
+        return this.configsRepository.findOneBy({
+            module: module
         });
     }
 }
