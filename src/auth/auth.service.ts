@@ -14,7 +14,6 @@ import { generateKey } from 'src/utils/generateKey';
 import { LoginDto } from './dto/login.dto';
 import { updateEnvVariable } from 'src/utils/updateEnv';
 import { comparePasswords } from 'src/helpers/password';
-import { Credit } from 'src/credits/entities/credit.entity';
 import { CreditsService } from 'src/credits/credits.service';
 
 const EXPIRE_TIME = 20 * 1000;
@@ -44,7 +43,7 @@ export class AuthService {
         });
 
         // Creamos los creditos asignando al usuario que se registra
-        await this.creditsService.create(user.email);
+        this.creditsService.create(email);
 
         return {
             status: 200,
@@ -67,9 +66,9 @@ export class AuthService {
             throw new UnauthorizedException('User or password invalid');
         }
 
-        const getCredits = await this.creditsService.getUserCredits(user.email);
+        const userCredits = user.credits.reduce((total, credit) => total + credit.credits, 0);
 
-        const payload = { email: user.email, role: user.role, credits: getCredits.data.credits };
+        const payload = { email: user.email, role: user.role, credits: userCredits };
 
         try {
             // Obtener la clave privada en formato Buffer
@@ -85,7 +84,7 @@ export class AuthService {
                 user: {
                     email: user.email,
                     role: user.role,
-                    credits: getCredits.data.credits
+                    credits: userCredits
                 },
                 backendTokens: {
                     accessToken,

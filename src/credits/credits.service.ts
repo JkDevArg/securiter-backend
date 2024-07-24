@@ -3,7 +3,7 @@ import { UpdateCreditDto } from './dto/update-credit.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Credit } from './entities/credit.entity';
-import { UserActiveInterface } from 'src/common/interfaces/user-active.interface';
+import { UserActiveInterface } from "src/common/interfaces/user-active.interface";
 
 @Injectable()
 export class CreditsService {
@@ -14,21 +14,38 @@ export class CreditsService {
   ) { }
 
 
-  async getUserCredits(email: string) {
+  async getUserCredits(user: UserActiveInterface) {
     const credit = await this.creditRepository.findOne({
       where: {
-        userEmail: email,
+        userEmail: user.email,
       },
       order: {
         createdAt: 'DESC',
       },
     });
 
+    if (!credit) {
+      return {
+        status: 404,
+        message: 'No credits found for the user',
+        data: null,
+      };
+    }
+
+    const credits = credit.credits || 0;
+    const creditsUsed = credit.credits_used || 0;
+    const creditsTotal = credit.credits_total || 0;
+
     return {
       status: 200,
-      data: credit
+      data: {
+        credits,
+        creditsUsed,
+        creditsTotal,
+      },
     };
   }
+
 
   async updateUserCredits(module: string, credits: number, user: UserActiveInterface) {
     const credit = await this.creditRepository.findOne({
@@ -44,7 +61,7 @@ export class CreditsService {
   }
 
   create(email: string) {
-    return this.creditRepository.create({
+    return this.creditRepository.save({
         credits: 100,
         userEmail: email
     });

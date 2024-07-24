@@ -15,6 +15,7 @@ export class PhoneController {
 
     @Post('check-phone')
     async checkUserPhone(@Body() phone: CheckPhoneDto, @ActiveUser() user: UserActiveInterface) {
+        console.log(user)
         return await this.phoneService.checkUserPhone(phone, user);
     }
 

@@ -1,11 +1,15 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Request, UseGuards } from '@nestjs/common';
 import { CreditsService } from './credits.service';
-import { CreateCreditDto } from './dto/create-credit.dto';
 import { UpdateCreditDto } from './dto/update-credit.dto';
-import { UserActiveInterface } from 'src/common/interfaces/user-active.interface';
 import { ActiveUser } from 'src/common/decorators/active-user.decorator';
+import { UserActiveInterface } from 'src/common/interfaces/user-active.interface';
+import { AuthGuard } from 'src/auth/guard/auth.guard';
+import { Auth } from 'src/auth/decorators/auth.decorator';
+import { Role } from '../common/enums/rol.enum';
 
 @Controller('credits')
+@UseGuards(AuthGuard)
+@Auth(Role.USER)
 export class CreditsController {
   constructor(private readonly creditsService: CreditsService) {}
 
@@ -34,8 +38,8 @@ export class CreditsController {
     return this.creditsService.remove(+id);
   }
 
-  @Get('get_credits')
-  getUserCredits(@ActiveUser() user: UserActiveInterface) {
-    return this.creditsService.getUserCredits(user.email);
+  @Get('my-credits/credits')
+    getMyCredits(@ActiveUser() user: UserActiveInterface) {
+      return this.creditsService.getUserCredits(user);
   }
 }

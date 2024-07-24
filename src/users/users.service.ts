@@ -27,16 +27,14 @@ export class UsersService {
     return this.userRepository.findOne({
       where: { email },
       select: ['id', 'name', 'email', 'password', 'role'],
+      relations: ['credits'],
     });
   }
 
-  findByEmailWithCredit(email: string){
-    return this.creditRepository.findOne({
-      where: { userEmail: email },
-      select: ['id', 'credits'],
-      order: {
-        createdAt: 'DESC',
-      }
+  async findByEmailWithCredits(email: string): Promise<User> {
+    return await this.userRepository.findOne({
+      where: { email },
+      relations: ['credits'],
     });
   }
 

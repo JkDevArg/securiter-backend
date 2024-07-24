@@ -1,10 +1,12 @@
+import { Role } from 'src/common/enums/rol.enum';
+import { Credit } from 'src/credits/entities/credit.entity';
 import {
-  Column,
-  DeleteDateColumn,
   Entity,
   PrimaryGeneratedColumn,
+  Column,
+  OneToMany,
+  DeleteDateColumn,
 } from 'typeorm';
-import { Role } from '../../common/enums/rol.enum';
 
 @Entity()
 export class User {
@@ -28,4 +30,7 @@ export class User {
 
   @DeleteDateColumn()
   deletedAt: Date;
+
+  @OneToMany(() => Credit, credit => credit.user)
+  credits: Credit[];
 }

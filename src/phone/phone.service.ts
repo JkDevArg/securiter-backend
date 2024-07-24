@@ -29,6 +29,7 @@ export class PhoneService {
     ){}
 
     async checkUserPhone(phoneNumber: CheckPhoneDto, user: UserActiveInterface) {
+
         const headers = {
             'Content-type': 'application/json'
         };
