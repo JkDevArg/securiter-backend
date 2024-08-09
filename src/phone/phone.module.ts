@@ -10,10 +10,12 @@ import { CreditsService } from 'src/credits/credits.service';
 import { Configs } from 'src/configs/entities/configs.entity';
 import { ConfigService } from '@nestjs/config';
 import { SettingsService } from 'src/configs/configs.service';
+import { LogService } from 'src/logs/log.service';
+import { Log } from 'src/logs/entities/log.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Store, User, Credit, Configs])],
+  imports: [TypeOrmModule.forFeature([Store, User, Credit, Configs, Log])],
   controllers: [PhoneController],
-  providers: [PhoneService, UsersService, CreditsService, ConfigService, SettingsService],
+  providers: [PhoneService, UsersService, CreditsService, ConfigService, SettingsService, LogService],
 })
 export class PhoneModule {}

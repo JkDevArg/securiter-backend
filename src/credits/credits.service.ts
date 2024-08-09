@@ -33,21 +33,16 @@ export class CreditsService {
     }
 
     const credits = credit.credits || 0;
-    const creditsUsed = credit.credits_used || 0;
-    const creditsTotal = credit.credits_total || 0;
 
     return {
       status: 200,
       data: {
-        credits,
-        creditsUsed,
-        creditsTotal,
+        credits
       },
     };
   }
 
-
-  async updateUserCredits(module: string, credits: number, user: UserActiveInterface) {
+  async updateUserCredits(credits: number, user: UserActiveInterface) {
     const credit = await this.creditRepository.findOne({
       where: {
         userEmail: user.email,
@@ -58,13 +53,29 @@ export class CreditsService {
     });
 
     // update credits
+    if(!credits) return false;
+    credit.credits = credits;
+    return await this.creditRepository.save(credit);
   }
 
   create(email: string) {
-    return this.creditRepository.save({
-        credits: 100,
-        userEmail: email
+    const credit = this.creditRepository.findOne({
+      where: {
+        userEmail: email,
+      },
+      order: {
+        createdAt: 'DESC',
+      },
     });
+
+    if(!credit) return this.creditRepository.save({ credits: 100, userEmail: email });
+
+    return {
+      status: 200,
+      data: {
+        credit
+      },
+    };
   }
 
   findAll() {
@@ -82,4 +93,5 @@ export class CreditsService {
   remove(id: number) {
     return `This action removes a #${id} credit`;
   }
+
 }

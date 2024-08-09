@@ -35,13 +35,18 @@ export class PhoneController {
     }
 
     @Post('check-url')
-    async checkUrl(@Body() url: { url: string }) {
-        return await this.phoneService.scanUrl(url);
+    async checkUrl(@Body() url: { url: string }, @ActiveUser() user: UserActiveInterface) {
+        return await this.phoneService.scanUrl(url, user);
     }
 
     @Auth(Role.ADMIN)
     @Post('check-account')
     async checkAccount() {
         return await this.phoneService.checkAccount();
+    }
+
+    @Get('user/get-history')
+    async getHistory(@ActiveUser() user: UserActiveInterface) {
+        return await this.phoneService.getHistory(user);
     }
 }

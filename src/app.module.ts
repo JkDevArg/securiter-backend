@@ -11,6 +11,7 @@ import { ConfigsModule } from './configs/configs.module';
 import { APP_GUARD } from '@nestjs/core';
 import { CustomThrottlerGuard } from './common/throttler/throttler.guard';
 import { ThrottlerModule } from '@nestjs/throttler';
+import { LogModule } from './logs/log.module';
 
 @Module({
   imports: [
@@ -49,7 +50,8 @@ import { ThrottlerModule } from '@nestjs/throttler';
     AuthModule,
     PhoneModule,
     CreditsModule,
-    ConfigsModule
+    ConfigsModule,
+    LogModule
   ],
   controllers: [],
   providers: [

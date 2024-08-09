@@ -7,10 +7,10 @@ import { Store } from "./entities/validate.entity";
 import { Repository } from "typeorm";
 import { UserActiveInterface } from "src/common/interfaces/user-active.interface";
 import { Role } from "src/common/enums/rol.enum";
-import { User } from "src/users/entities/user.entity";
 import { UsersService } from "src/users/users.service";
 import { CreditsService } from "src/credits/credits.service";
 import { SettingsService } from "src/configs/configs.service";
+import { LogService } from "src/logs/log.service";
 
 @Injectable()
 export class PhoneService {
@@ -26,6 +26,7 @@ export class PhoneService {
         private readonly creditService: CreditsService,
         private readonly moduleService: SettingsService,
         private readonly userService: UsersService,
+        private readonly logService: LogService,
     ){}
 
     async checkUserPhone(phoneNumber: CheckPhoneDto, user: UserActiveInterface) {
@@ -34,13 +35,27 @@ export class PhoneService {
             'Content-type': 'application/json'
         };
 
-        const validateCredits = await this.moduleService.getSettingsByName('check-phone')
-        //const validateCredits = await this.creditService.getUserCredits(user);
-        /* if (validateCredits.data['credits'] < 10) throw new BadRequestException(`No tienes suficientes créditos`); */
+        const validateCredits = await this.moduleService.getSettingsByName('check-phone'); // validamos cuantos creditos se necesita
+        const userCredits = await this.creditService.getUserCredits(user);
+        if(!userCredits.data) throw new BadRequestException(`El usuario no tiene asignado creditos, contactarse con soporte`);
+
+        const creditsUser = userCredits.data['credits'] ?? 0;
+
+        if (userCredits?.data['credits'] < validateCredits?.credits) {
+            const msg = `Creditos insuficientes, te faltan: ${validateCredits?.credits - userCredits?.data['credits']} creditos`;
+            this.logService.registerLog(msg, 'check-phone', user, creditsUser, creditsUser, 0);
+            throw new BadRequestException(msg);
+        }
 
         const exists = await this.checkValidateExists('phone_number', phoneNumber.number);
-        if (exists) return { status: 200, data: exists};
+        if (exists) {
+            const newCredits = creditsUser - validateCredits?.credits;
+            this.creditService.updateUserCredits(newCredits, user);
+            this.logService.registerLog(exists, exists.module, user, creditsUser, newCredits, validateCredits.credits);
+            return JSON.parse(exists.data);
+        }
 
+        /* si no existe los datos entonces seguimos */
         const axiosPromise = axios.post(`${this.baseUrl}/json/phone/${this.key}/${phoneNumber.number}?country[]=PE`, { headers });
         const resp = await axiosErrorHandler(axiosPromise);
 
@@ -49,14 +64,23 @@ export class PhoneService {
         const saveStore = {
             phone_number: phoneNumber.number.toString(),
             data: JSON.stringify(resp), // Convertir el objeto resp a una cadena JSON
-            credits: 10,
+            credits: validateCredits?.credits,
             userEmail: user.email,
             module: 'check-phone',
             is_admin: user.role == Role.ADMIN
         };
 
+        const newCredits = creditsUser - validateCredits?.credits;
+        const save = this.creditService.updateUserCredits(newCredits, user);
+        if(!save) {
+            const msg = 'Hubo un error al actualizar los creditos';
+            this.logService.registerLog(msg, saveStore.module, user, creditsUser, newCredits, creditsUser);
+            throw new BadRequestException(msg);
+        }
+
+        this.logService.registerLog(resp, 'check-phone', user, creditsUser, newCredits, validateCredits.credits);
+
         await this.storeRepository.save(saveStore);
-        //Desconar los credios
         return {
             status: 200,
             data: resp
@@ -119,17 +143,31 @@ export class PhoneService {
         });
 
         const resp = await response.json();
+        console.log(resp);
         return {
             status: response.status,
             data: resp
         };
     }
 
-    async scanUrl(url: { url: string }) {
-        const strictness = 0;
+     async scanUrl(url: { url: string }, user: UserActiveInterface) {
+         const strictness = 0;
         const parameters = { strictness: String(strictness) };
         const formattedParameters = new URLSearchParams(parameters).toString();
         const encodedUrl = encodeURIComponent(url.url);
+
+        const validateCredits = await this.moduleService.getSettingsByName('check-url');
+        const userCredits = await this.creditService.getUserCredits(user);
+        if(!userCredits.data) throw new BadRequestException(`El usuario no tiene asignado creditos, contactarse con soporte`);
+
+        const creditsUser = userCredits.data['credits'] ?? 0;
+        const exists = await this.checkValidateExists('url', url.url.toString());
+
+        if (exists) {
+            const newCredits = creditsUser - validateCredits?.credits;
+            this.logService.registerLog(exists, 'check-url', user, creditsUser, newCredits, validateCredits.credits);
+            return JSON.parse(exists.data);
+        }
 
         const apiUrl = `${this.baseUrl}/json/url/${this.key}/${encodedUrl}?${formattedParameters}`;
 
@@ -140,6 +178,30 @@ export class PhoneService {
         const axiosPromise = axios.post(apiUrl, {}, { headers });
         const resp = await axiosErrorHandler(axiosPromise);
 
+        if (!resp.success) throw new BadRequestException(resp.message);
+
+        const saveStore = {
+            url: url.url.toString(),
+            data: JSON.stringify(resp), // Convertir el objeto resp a una cadena JSON
+            credits: validateCredits?.credits,
+            userEmail: user.email,
+            module: 'check-url',
+            is_admin: user.role == Role.ADMIN
+        };
+
+        await this.storeRepository.save(saveStore);
+
+        const newCredits = creditsUser - validateCredits?.credits;
+        const save = this.creditService.updateUserCredits(newCredits, user);
+        if(!save) {
+            const msg = 'Hubo un error al actualizar los creditos';
+            this.logService.registerLog(msg, saveStore.module, user, creditsUser, newCredits, creditsUser);
+            throw new BadRequestException(msg);
+        }
+
+        this.logService.registerLog(resp, 'check-url', user, creditsUser, newCredits, validateCredits.credits);
+
+        await this.storeRepository.save(saveStore);
         return {
             status: 200,
             data: resp
@@ -167,6 +229,14 @@ export class PhoneService {
 
         return this.storeRepository.findOne({
             where: whereCondition
+        });
+    }
+
+    async getHistory (user: UserActiveInterface) {
+        return this.storeRepository.find({
+            where: {
+                userEmail: user.email
+            }
         });
     }
 }

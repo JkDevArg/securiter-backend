@@ -16,12 +16,6 @@ export class Credit {
   @Column()
   credits: number;
 
-  @Column({ nullable: true })
-  credits_used: number;
-
-  @Column({ nullable: true })
-  credits_total: number;
-
   @ManyToOne(() => User, user => user.credits)
   @JoinColumn({ name: 'userEmail', referencedColumnName: 'email' })
   user: User;
@@ -31,4 +25,7 @@ export class Credit {
 
   @CreateDateColumn()
   createdAt: Date;
+  @CreateDateColumn()
+
+  updatedAt: Date;
 }
